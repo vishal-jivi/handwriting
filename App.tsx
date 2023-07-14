@@ -5,114 +5,205 @@
  * @format
  */
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, { useRef, useState } from 'react';
 import {
   SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
-  useColorScheme,
+  Image,
   View,
+  TouchableOpacity,
+  TextInput,
 } from 'react-native';
+import SignatureScreen from "react-native-signature-canvas";
+import WebView from 'react-native-webview';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
 
 function App(): JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  const ref : any = React.useRef();
+  const [signature1, SetSignature] = useState()
+  const [colorText, setPenColor] = useState("");
+  const [penSize, setPenSize] = useState('1');
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const handleColorChange = () => {
+    ref.current.changePenColor(colorText);
+  };
+  const handleOK = (signature: any) => {
+    console.log(signature);
+    SetSignature(signature)
+    // onOK(signature); // Callback from Component props
+  };
+  const handleUndo = () => {
+    console.log(ref.current,'------------')
+    ref.current.undo();
+  };
+  
+  const handleRedo = () => {
+    ref.current.redo();
+  };
+  const handleEmpty = () => {
+    console.log("Empty");
   };
 
+  const handleClear = () => {
+    console.log("clear success!");
+  };
+
+  const handleEnd = () => {
+    // ref.current.readSignature();
+  };
+
+  // Called after ref.current.getData()
+  const handleData = (data: any) => {
+    console.log(data);
+  };
+
+  const onColorChange = (e: any) => {
+    setPenColor(e)
+  }
+
+  const onPenSizeChange = (e: any) => {
+    let size = parseInt(e)
+    ref.current.changePenSize(e, e)
+    setPenSize(e)
+  }
+
+  const onErase = () => {
+    ref.current.erase();
+  }
+
+  const onDraw = () => {
+    ref.current.draw();
+  }
+
+
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+    <SafeAreaView style={styles.container}>
+      <SignatureScreen
+        ref={ref}
+        onEnd={handleEnd}
+        onOK={handleOK}
+        onEmpty={handleEmpty}
+        onClear={handleClear}
+        penColor={colorText}
+        onGetData={handleData}
+        autoClear={true}
+        descriptionText={'text'}
+        dotSize={0}
+        // onChangePenSize={ref.current.changePenSize(10, 10)}
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
+       <View style={styles.row}>
+        <TouchableOpacity
+          style={[styles.setButton, { marginRight: 30, backgroundColor: 'red' }]}
+          onPress={onErase}
+        >
+          <Text style={styles.text}>Erase</Text>
+        </TouchableOpacity>
+        <TextInput
+          placeholder="Specify Pen Color"
+          style={styles.textInput}
+          autoCapitalize="none"
+          value={penSize}
+          onChangeText={(e)=> {onPenSizeChange(e)} }/>
+        <TouchableOpacity
+          style={styles.setButton}
+          onPress={handleColorChange}
+        >
+          <Text style={styles.text}>Set</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.setButton, { marginLeft: 30, backgroundColor: 'red' }]}
+          onPress={onDraw}
+        >
+          <Text style={styles.text}>Pen</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.row}>
+        <TouchableOpacity
+          style={[styles.setButton, { marginRight: 30, backgroundColor: 'red' }]}
+          onPress={handleUndo}
+        >
+          <Text style={styles.text}>Undo</Text>
+        </TouchableOpacity>
+        <TextInput
+          placeholder="Specify Pen Color"
+          style={styles.textInput}
+          autoCapitalize="none"
+          value={colorText}
+          onChangeText={(e)=> {onColorChange(e)} }/>
+        <TouchableOpacity
+          style={styles.setButton}
+          onPress={handleColorChange}
+        >
+          <Text style={styles.text}>Set</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.setButton, { marginLeft: 30, backgroundColor: 'red' }]}
+          onPress={handleRedo}
+        >
+          <Text style={styles.text}>Redo</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.preview}>
+        {signature1 ? (
+          <Image
+            resizeMode={"contain"}
+            style={{ width: 'auto', height: 114 }}
+            source={{ uri: signature1 }}
+          />
+        ) : null}
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    // backgroundColor: 'red',
+    display: 'flex',
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  preview: {
+    width: 335,
+    // height: 114,
+    backgroundColor: "#F8F8F8",
+    justifyContent: "center",
+    // alignItems: "center",
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
+  row: {
+    flexDirection: 'row',
+    marginTop: 10,
+    borderBottomWidth: 1,
+      borderBottomColor: '#f2f2f2',
+      paddingBottom: 5
+    },
+    textSign: {
+      color: 'deepskyblue',
+      fontWeight: 'bold',
+      paddingVertical: 5,
+    },
+    text: {
+      color: '#fff',
+      fontWeight: '900',
+    },
+    textInput: {
+      paddingVertical: 10,
+      textAlign: 'center'
+    },
+    setButton: {
+      backgroundColor: 'deepskyblue',
+      textAlign: 'center',
+      fontWeight: '900',
+      color: '#fff',
+      marginHorizontal: 10,
+      paddingVertical: 15,
+      paddingHorizontal: 10,
+      borderRadius: 5,
+    }
 });
 
 export default App;
