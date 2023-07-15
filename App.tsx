@@ -21,7 +21,7 @@ import {
   Alert
 } from 'react-native';
 import SignatureScreen from "react-native-signature-canvas";
-import WebView from 'react-native-webview';
+import { ActionButton } from './components/actionButtons';
 import RNFetchBlob from "rn-fetch-blob";
 
 const STROKES = [
@@ -120,46 +120,48 @@ function App(): JSX.Element {
   }
 
   const handleSave = async (signature: any) => {
-    ref.current.readSignature()	
-  
-    if (Platform.OS === 'android') {
-      var isReadGranted: any = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-        {
-          title: 'Storage Permission',
-          message: 'App needs access to your storage to read files',
-          buttonPositive: 'OK',
-          buttonNegative: 'Cancel',
-        },
-      );
+    ref.current.readSignature()
+    try {
+      if (Platform.OS === 'android') {
+        var isReadGranted: any = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+          {
+            title: 'Storage Permission',
+            message: 'App needs access to your storage to read files',
+            buttonPositive: 'OK',
+            buttonNegative: 'Cancel',
+          },
+        );
+      }
+      if (isReadGranted === PermissionsAndroid.RESULTS.GRANTED) {
+        const dirs = RNFetchBlob.fs.dirs
+        var image_data = signature.split('');
+        const filePath = dirs.DownloadDir + "/" + 'signture' + new Date().getMilliseconds() + '.png'
+        RNFetchBlob.fs.writeFile(filePath, image_data.slice(0, 8).toString(), 'base64')
+          .then(() => {
+            Alert.alert('Hurray...!!!', 'Successfuly saved to' + filePath, [
+              { text: 'OK' },
+            ]);
+          })
+          .catch((errorMessage) => {
+            Alert.alert('OOPSSSSS...!!!', 'Something went wrong' + errorMessage, [
+              { text: 'OK' },
+            ]);
+          })
+      }
+    } catch (error) {
+      Alert.alert('OOPSSSSS...!!!', 'Something went wrong' + error, [
+        { text: 'OK' },
+      ]);
     }
-    if (isReadGranted === PermissionsAndroid.RESULTS.GRANTED) {
-      const dirs = RNFetchBlob.fs.dirs
-      var image_data = signature.split('');
-      const filePath = dirs.DownloadDir + "/" + 'signture' + new Date().getMilliseconds() + '.png'
-      console.log(image_data, filePath , image_data.slice(0,8));
-      
-      RNFetchBlob.fs.writeFile(filePath, image_data.slice(0,8).toString(), 'base64')
-        .then(() => {
-          // Alert("Successfuly saved to" + filePath)
-          Alert.alert( 'Hurray...!!!','Successfuly saved to' + filePath, [
-            
-            {text: 'OK'},
-          ]);
-        })
-        .catch((errorMessage) => {
-          Alert.alert( 'OOPSSSSS...!!!','Something went wrong' + errorMessage, [
-            
-            {text: 'OK'},
-          ]);
-        })
-    }
+
+
   }
 
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text>Draw Here</Text>
+      <Text style={styles.headingText}>Draw Here</Text>
       <SignatureScreen
         ref={ref}
         onOK={handleSave}
@@ -173,59 +175,33 @@ function App(): JSX.Element {
          }'
       />
       <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-evenly', marginVertical: 15 }}>
-        <TouchableOpacity
-          style={[styles.setButton, { backgroundColor: 'red' }]}
-          onPress={onDraw}
-        >
-          <Text style={styles.text}>Pen</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.setButton, { backgroundColor: 'red' }]}
-          onPress={onErase}
-        >
-          <Text style={styles.text}>Erase</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.setButton, { backgroundColor: 'red' }]}
-          onPress={handleUndo}
-        >
-          <Text style={styles.text}>Undo</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.setButton, { backgroundColor: 'red' }]}
-          onPress={handleRedo}
-        >
-          <Text style={styles.text}>Redo</Text>
-
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.setButton, { backgroundColor: 'red' }]}
-          onPress={handleClear}
-        >
-          <Text style={styles.text}>Clear</Text>
-        </TouchableOpacity>
+        <ActionButton handleOnPress={onDraw} buttonName={'Pen'} />
+        <ActionButton handleOnPress={onErase} buttonName={'Erase'} />
+        <ActionButton handleOnPress={handleUndo} buttonName={'Undo'} />
+        <ActionButton handleOnPress={handleRedo} buttonName={'Redo'} />
+        <ActionButton handleOnPress={handleClear} buttonName={'Clear'} />
       </View>
-      <Text>Select Stroke here</Text>
+      <Text style={styles.headingText}>Select Stroke here</Text>
       <View style={[styles.row, { display: 'flex', justifyContent: 'space-evenly', alignItems: 'center' }]}>
-        {STROKES.map((stroke) => {
+        {STROKES.map((stroke, index) => {
           return (
             <TouchableOpacity
+              key={index}
               onPress={() => onPenSizeChange(stroke.number)}
               style={{ width: stroke.width, height: stroke.height, backgroundColor: stroke.number === penSize ? colorText : '#fff', borderRadius: stroke.radius, justifyContent: 'center', alignItems: 'center' }}
             >
-              <Text style={{color: stroke.number !== penSize ? 'black' : '#fff'}}> {stroke.number} </Text>
+              <Text style={{ color: stroke.number !== penSize ? 'black' : '#fff' }}> {stroke.number} </Text>
             </TouchableOpacity>
           )
         })}
 
-
-
       </View>
-      <Text>Select color here</Text>
+      <Text style={styles.headingText}>Select color here</Text>
       <View style={[styles.row, { display: 'flex', justifyContent: 'space-evenly', alignItems: 'center' }]}>
-        {STROKECOLOR.map((color) => {
+        {STROKECOLOR.map((color, index) => {
           return (
             <TouchableOpacity
+              key={index}
               onPress={() => onColorChange(color)}
               style={[{ width: 40, height: 40, backgroundColor: color, borderRadius: 20, justifyContent: 'center', alignItems: 'center' }, color === colorText ? { borderWidth: 4, borderColor: color === 'black' ? '#fff' : 'black' } : {}]}
             >
@@ -267,6 +243,11 @@ const styles = StyleSheet.create({
   preview: {
     width: 335,
     justifyContent: "center",
+  },
+  headingText: {
+    color: 'black',
+    fontSize: 25,
+    fontWeight: '600'
   },
   row: {
     flexDirection: 'row',
