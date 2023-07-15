@@ -16,14 +16,17 @@ import {
   View,
   TouchableOpacity,
   TextInput,
+  Platform,
+  PermissionsAndroid
 } from 'react-native';
 import SignatureScreen from "react-native-signature-canvas";
 import WebView from 'react-native-webview';
+import RNFetchBlob from "rn-fetch-blob";
 
 
 function App(): JSX.Element {
   const ref : any = React.useRef();
-  const [signature1, SetSignature] = useState()
+  const [signature1, SetSignature] = useState('')
   const [colorText, setPenColor] = useState("");
   const [penSize, setPenSize] = useState('1');
 
@@ -78,6 +81,36 @@ function App(): JSX.Element {
     ref.current.draw();
   }
 
+  const handleSave = async () => {
+    if (Platform.OS === 'android') {
+      console.log('in anroid ')
+    var isReadGranted : any = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+        {
+          title: 'Storage Permission',
+          message: 'App needs access to your storage to read files',
+          buttonPositive: 'OK',
+          buttonNegative: 'Cancel',
+        },
+      );
+    }
+    console.log('in anroid ',  isReadGranted)
+
+    if (isReadGranted === PermissionsAndroid.RESULTS.GRANTED) {
+      const dirs = RNFetchBlob.fs.dirs
+      var image_data = signature1.split('data:image/png;base64,');
+      console.log(image_data, signature1, '///////////');
+      
+      const filePath = dirs.DownloadDir+"/"+'signture'+new Date().getMilliseconds()+'.png'
+      RNFetchBlob.fs.writeFile(filePath, image_data[1], 'base64')
+      .then(() => {
+        console.log("Successfuly saved to"+ filePath)
+      })
+      .catch((errorMessage) =>{
+        console.log('Error in file saving to gallery', errorMessage)
+      })      }
+    }
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -94,6 +127,12 @@ function App(): JSX.Element {
         dotSize={0}
         // onChangePenSize={ref.current.changePenSize(10, 10)}
       />
+      <TouchableOpacity
+          style={[styles.setButton, { marginRight: 30, backgroundColor: 'red' }]}
+          onPress={handleSave}
+        >
+          <Text style={styles.text}>Save</Text>
+        </TouchableOpacity>
        <View style={styles.row}>
         <TouchableOpacity
           style={[styles.setButton, { marginRight: 30, backgroundColor: 'red' }]}
@@ -170,7 +209,7 @@ const styles = StyleSheet.create({
   preview: {
     width: 335,
     // height: 114,
-    backgroundColor: "#F8F8F8",
+    // backgroundColor: "#F8F8F8",
     justifyContent: "center",
     // alignItems: "center",
   },
