@@ -120,42 +120,49 @@ function App(): JSX.Element {
   }
 
   const handleSave = async (signature: any) => {
-    ref.current.readSignature()
+    // ref.current.readSignature()
+    const sig = signature
     try {
-      if (Platform.OS === 'android') {
-        var isReadGranted: any = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-          {
-            title: 'Storage Permission',
-            message: 'App needs access to your storage to read files',
-            buttonPositive: 'OK',
-            buttonNegative: 'Cancel',
-          },
-        );
-      }
-      if (isReadGranted === PermissionsAndroid.RESULTS.GRANTED) {
-        const dirs = RNFetchBlob.fs.dirs
-        var image_data = signature.split('');
-        const filePath = dirs.DownloadDir + "/" + 'signture' + new Date().getMilliseconds() + '.png'
-        RNFetchBlob.fs.writeFile(filePath, image_data.slice(0, 8).toString(), 'base64')
-          .then(() => {
-            Alert.alert('Hurray...!!!', 'Successfuly saved to' + filePath, [
-              { text: 'OK' },
-            ]);
-          })
-          .catch((errorMessage) => {
-            Alert.alert('OOPSSSSS...!!!', 'Something went wrong' + errorMessage, [
-              { text: 'OK' },
-            ]);
-          })
+      if (typeof sig === 'string') {
+        var isReadGranted: any = '';
+        if (Platform.OS === 'android') {
+          isReadGranted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+            {
+              title: 'Storage Permission',
+              message: 'App needs access to your storage to read files',
+              buttonPositive: 'OK',
+              buttonNegative: 'Cancel',
+            },
+          );
+        }
+
+        if (isReadGranted === PermissionsAndroid.RESULTS.GRANTED) {
+          const dirs = RNFetchBlob.fs.dirs
+          var image_data = sig.split('data:image/png;base64,')[1];
+          const filePath = dirs.DownloadDir + "/" + 'signture' + new Date().getMilliseconds() + '.png'
+          RNFetchBlob.fs.writeFile(filePath, image_data, 'base64')
+            .then(() => {
+              Alert.alert('Hurray...!!!', 'Successfuly saved to' + filePath, [
+                { text: 'OK' },
+              ]);
+            })
+            .catch((errorMessage) => {
+              Alert.alert('OOPSSSSS...!!!', 'Something went wrong' + errorMessage, [
+                { text: 'OK' },
+              ]);
+            })
+        }
+      } else {
+        Alert.alert('Canvas is empty...', 'Please draw something.', [
+          { text: 'OK' },
+        ]);
       }
     } catch (error) {
       Alert.alert('OOPSSSSS...!!!', 'Something went wrong' + error, [
         { text: 'OK' },
       ]);
     }
-
-
   }
 
 
@@ -215,7 +222,7 @@ function App(): JSX.Element {
       <View style={[styles.row]}>
         <TouchableOpacity
           style={[styles.setButton, { marginRight: 30, backgroundColor: 'red', width: '50%' }]}
-          onPress={handleSave}
+          onPress={()=> ref.current.readSignature()}
         >
           <Text style={styles.text}>Save To Gallery</Text>
         </TouchableOpacity>
